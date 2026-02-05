@@ -37,9 +37,9 @@ PanKbase_API/
 
 ## Installation
 
-1. Create a virtual environment:
+1. Create a virtual environment (Only need to do this once):
 ```bash
-python -m venv venv
+python -m venv venv 
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
@@ -53,6 +53,7 @@ pip install -r requirements.txt
 Start the FastAPI server:
 
 ```bash
+source venv/bin/activate
 uvicorn app.main:app --reload
 ```
 
@@ -64,12 +65,15 @@ The API will be available at `http://localhost:8000`.
 
 ## Testing with Streamlit
 
-A Streamlit test application is provided for interactive testing:
+A Streamlit test application is provided for interactive testing (Please run this in another command line window):
 
 ```bash
-# Make sure the API server is running first
+source venv/bin/activate
+# Make sure the API server is running first in the first command line window
 streamlit run test_app.py
 ```
+
+**This website takes ~1 min to load everything. Please wait patiently.**
 
 This provides a UI for:
 - Data exploration with filters
