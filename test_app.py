@@ -8,6 +8,7 @@ This app provides a UI for testing the API endpoints locally.
 import streamlit as st
 import requests
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Dict, Any, List
@@ -239,19 +240,104 @@ elif page == "Time-Series Visualization":
         st.error("Failed to load filter metadata")
         st.stop()
     
-    # Simplified filter controls
-    col1, col2 = st.columns(2)
-    
+    # Filter controls
+    st.subheader("Filters")
     filters = {}
     
+    # Categorical filters
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
+        if 'gender' in metadata['categorical_filters']:
+            filters['gender'] = st.multiselect(
+                "Gender",
+                metadata['categorical_filters']['gender'],
+                default=[],
+                key="ts_gender"
+            )
+        
         if 'diabetes_status' in metadata['categorical_filters']:
             filters['diabetes_status'] = st.multiselect(
                 "Diabetes Status",
                 metadata['categorical_filters']['diabetes_status'],
-                default=[]
+                default=[],
+                key="ts_diabetes"
+            )
+    
+    with col2:
+        if 'collections' in metadata['categorical_filters']:
+            filters['collections'] = st.multiselect(
+                "Collection Center",
+                metadata['categorical_filters']['collections'],
+                default=[],
+                key="ts_collections"
             )
         
+        if 'ethnicities' in metadata['categorical_filters']:
+            filters['ethnicities'] = st.multiselect(
+                "Ethnicity",
+                metadata['categorical_filters']['ethnicities'][:20],
+                default=[],
+                key="ts_ethnicities"
+            )
+    
+    with col3:
+        if 'cause_of_death' in metadata['categorical_filters']:
+            filters['cause_of_death'] = st.multiselect(
+                "Cause of Death",
+                metadata['categorical_filters']['cause_of_death'][:20],
+                default=[],
+                key="ts_cod"
+            )
+    
+    # Numerical filters
+    st.subheader("Numerical Filters")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if 'age_range' in metadata['numerical_filters']:
+            age_range = metadata['numerical_filters']['age_range']
+            age_min, age_max = st.slider(
+                "Age Range (years)",
+                min_value=int(age_range['min']),
+                max_value=int(age_range['max']),
+                value=(int(age_range['min']), int(age_range['max'])),
+                key="ts_age"
+            )
+            if age_min != int(age_range['min']) or age_max != int(age_range['max']):
+                filters['age_range'] = {'min_value': age_min, 'max_value': age_max}
+    
+    with col2:
+        if 'bmi_range' in metadata['numerical_filters']:
+            bmi_range = metadata['numerical_filters']['bmi_range']
+            bmi_min, bmi_max = st.slider(
+                "BMI Range",
+                min_value=float(bmi_range['min']),
+                max_value=float(bmi_range['max']),
+                value=(float(bmi_range['min']), float(bmi_range['max'])),
+                key="ts_bmi"
+            )
+            if bmi_min != bmi_range['min'] or bmi_max != bmi_range['max']:
+                filters['bmi_range'] = {'min_value': bmi_min, 'max_value': bmi_max}
+    
+    with col3:
+        if 'hba1c_range' in metadata['numerical_filters']:
+            hba1c_range = metadata['numerical_filters']['hba1c_range']
+            hba1c_min, hba1c_max = st.slider(
+                "HbA1c Range (%)",
+                min_value=float(hba1c_range['min']),
+                max_value=float(hba1c_range['max']),
+                value=(float(hba1c_range['min']), float(hba1c_range['max'])),
+                key="ts_hba1c"
+            )
+            if hba1c_min != hba1c_range['min'] or hba1c_max != hba1c_range['max']:
+                filters['hba1c_range'] = {'min_value': hba1c_min, 'max_value': hba1c_max}
+    
+    # Time-series options
+    st.subheader("Visualization Options")
+    col1, col2 = st.columns(2)
+    
+    with col1:
         timeseries_type = st.selectbox(
             "Time-Series Type",
             ["ins_ieq", "ins_content", "gcg_ieq", "gcg_content"],
@@ -264,13 +350,6 @@ elif page == "Time-Series Visualization":
         )
     
     with col2:
-        if 'collections' in metadata['categorical_filters']:
-            filters['collections'] = st.multiselect(
-                "Collection Center",
-                metadata['categorical_filters']['collections'],
-                default=[]
-            )
-        
         max_donors = st.slider("Max donors to display", 1, 50, 10)
     
     # Fetch time-series data
@@ -359,50 +438,171 @@ elif page == "Association Analysis":
     st.header("🔬 Association Analysis")
     st.markdown("Analyze associations between traits and metadata variables")
     
-    # Get available variables
+    # Get available variables and filter metadata
     variables = get_analysis_variables()
+    metadata = get_filter_metadata()
     
     if not variables:
         st.error("Failed to load analysis variables")
+        st.stop()
+    
+    if not metadata:
+        st.error("Failed to load filter metadata")
         st.stop()
     
     # Extract variable names by category
     donor_vars = [v['name'] for v in variables['donor_variables']]
     trait_vars = [v['name'] for v in variables['trait_variables']]
     
-    # Analysis settings
+    # ========== FILTER SECTION ==========
+    st.subheader("1. Filter Donors for Analysis")
+    st.markdown("First, select a subset of donors to include in the analysis.")
+    
+    analysis_filters = {}
+    
+    # Categorical filters
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if 'gender' in metadata['categorical_filters']:
+            analysis_filters['gender'] = st.multiselect(
+                "Gender",
+                metadata['categorical_filters']['gender'],
+                default=[],
+                key="analysis_gender"
+            )
+        
+        if 'diabetes_status' in metadata['categorical_filters']:
+            analysis_filters['diabetes_status'] = st.multiselect(
+                "Diabetes Status",
+                metadata['categorical_filters']['diabetes_status'],
+                default=[],
+                key="analysis_diabetes"
+            )
+    
+    with col2:
+        if 'collections' in metadata['categorical_filters']:
+            analysis_filters['collections'] = st.multiselect(
+                "Collection Center",
+                metadata['categorical_filters']['collections'],
+                default=[],
+                key="analysis_collections"
+            )
+        
+        if 'ethnicities' in metadata['categorical_filters']:
+            analysis_filters['ethnicities'] = st.multiselect(
+                "Ethnicity",
+                metadata['categorical_filters']['ethnicities'][:20],
+                default=[],
+                key="analysis_ethnicities"
+            )
+    
+    with col3:
+        if 'cause_of_death' in metadata['categorical_filters']:
+            analysis_filters['cause_of_death'] = st.multiselect(
+                "Cause of Death",
+                metadata['categorical_filters']['cause_of_death'][:20],
+                default=[],
+                key="analysis_cod"
+            )
+    
+    # Numerical filters
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if 'age_range' in metadata['numerical_filters']:
+            age_range = metadata['numerical_filters']['age_range']
+            age_min, age_max = st.slider(
+                "Age Range (years)",
+                min_value=int(age_range['min']),
+                max_value=int(age_range['max']),
+                value=(int(age_range['min']), int(age_range['max'])),
+                key="analysis_age"
+            )
+            if age_min != int(age_range['min']) or age_max != int(age_range['max']):
+                analysis_filters['age_range'] = {'min_value': age_min, 'max_value': age_max}
+    
+    with col2:
+        if 'bmi_range' in metadata['numerical_filters']:
+            bmi_range = metadata['numerical_filters']['bmi_range']
+            bmi_min, bmi_max = st.slider(
+                "BMI Range",
+                min_value=float(bmi_range['min']),
+                max_value=float(bmi_range['max']),
+                value=(float(bmi_range['min']), float(bmi_range['max'])),
+                key="analysis_bmi"
+            )
+            if bmi_min != bmi_range['min'] or bmi_max != bmi_range['max']:
+                analysis_filters['bmi_range'] = {'min_value': bmi_min, 'max_value': bmi_max}
+    
+    with col3:
+        if 'hba1c_range' in metadata['numerical_filters']:
+            hba1c_range = metadata['numerical_filters']['hba1c_range']
+            hba1c_min, hba1c_max = st.slider(
+                "HbA1c Range (%)",
+                min_value=float(hba1c_range['min']),
+                max_value=float(hba1c_range['max']),
+                value=(float(hba1c_range['min']), float(hba1c_range['max'])),
+                key="analysis_hba1c"
+            )
+            if hba1c_min != hba1c_range['min'] or hba1c_max != hba1c_range['max']:
+                analysis_filters['hba1c_range'] = {'min_value': hba1c_min, 'max_value': hba1c_max}
+    
+    # Show filtered donor count
+    filter_request = build_filter_request(analysis_filters)
+    if st.button("Preview Filtered Donors", key="preview_filter"):
+        with st.spinner("Counting filtered donors..."):
+            response = requests.post(
+                f"{API_URL}/api/filter/donors",
+                json=filter_request
+            )
+        if response.status_code == 200:
+            data = response.json()
+            st.info(f"**{data['donor_count']} donors** match your filter criteria (out of {metadata['donors_with_functional_data']} total)")
+        else:
+            st.error(f"Error: {response.text}")
+    
+    st.divider()
+    
+    # ========== ANALYSIS SETTINGS ==========
+    st.subheader("2. Analysis Settings")
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Variables of Interest")
+        st.markdown("**Variables of Interest**")
         selected_vars = st.multiselect(
-            "Select metadata variables",
+            "Select metadata variables to test for association",
             donor_vars,
-            default=['Age (years)', 'BMI'] if 'Age (years)' in donor_vars else donor_vars[:2]
+            default=['Age (years)', 'BMI'] if 'Age (years)' in donor_vars else donor_vars[:2],
+            key="analysis_vars"
         )
         
         control_vars = st.multiselect(
-            "Control variables",
+            "Control variables (covariates)",
             [v for v in donor_vars if v not in selected_vars],
-            default=[]
+            default=[],
+            key="analysis_control"
         )
     
     with col2:
-        st.subheader("Traits to Analyze")
+        st.markdown("**Traits to Analyze**")
         
         # Group traits
         ins_ieq_traits = [t for t in trait_vars if 'INS-IEQ' in t]
         
         trait_options = st.radio(
             "Select traits",
-            ["All traits", "INS-IEQ traits only", "Custom selection"]
+            ["All traits", "INS-IEQ traits only", "Custom selection"],
+            key="trait_options"
         )
         
         if trait_options == "Custom selection":
             selected_traits = st.multiselect(
                 "Select specific traits",
                 trait_vars,
-                default=ins_ieq_traits[:3]
+                default=ins_ieq_traits[:3],
+                key="custom_traits"
             )
         elif trait_options == "INS-IEQ traits only":
             selected_traits = ins_ieq_traits
@@ -416,17 +616,21 @@ elif page == "Association Analysis":
             "linear_regression": "Linear Regression",
             "correlation": "Pearson Correlation",
             "anova": "One-way ANOVA"
-        }[x]
+        }[x],
+        key="analysis_method"
     )
     
+    st.divider()
+    
     # Run analysis
-    if st.button("Run Analysis", type="primary"):
+    st.subheader("3. Run Analysis")
+    if st.button("Run Analysis", type="primary", key="run_analysis"):
         if not selected_vars:
             st.warning("Please select at least one variable of interest")
             st.stop()
         
         request = {
-            "filter_criteria": {},
+            "filter_criteria": filter_request,
             "variables_of_interest": selected_vars,
             "control_variables": control_vars,
             "traits": selected_traits,
@@ -609,5 +813,3 @@ elif page == "Integration Testing":
             st.error(f"Invalid JSON: {e}")
 
 
-# Import numpy for the association analysis page
-import numpy as np

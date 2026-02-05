@@ -184,18 +184,27 @@ class DataLoader:
         if self._biosample_df is not None:
             # Aggregate biosample data by donor (take first biosample per donor)
             biosample_by_donor = self._biosample_df.groupby('Donors').first().reset_index()
-            biosample_by_donor = biosample_by_donor.rename(columns={'Donors': 'Accession'})
+            
+            # Drop the biosample's own Accession column (PKBSM...) to avoid conflict
+            if 'Accession' in biosample_by_donor.columns:
+                biosample_by_donor = biosample_by_donor.drop(columns=['Accession'])
             
             # Add biosample columns with prefix to avoid conflicts
-            biosample_cols = [c for c in biosample_by_donor.columns if c != 'Accession']
+            biosample_cols = [c for c in biosample_by_donor.columns if c != 'Donors']
             rename_map = {c: f'biosample_{c}' for c in biosample_cols}
             biosample_by_donor = biosample_by_donor.rename(columns=rename_map)
             
+            # Merge on Donors (biosample) = Accession (donor)
             self._merged_df = self._merged_df.merge(
                 biosample_by_donor,
-                on='Accession',
+                left_on='Accession',
+                right_on='Donors',
                 how='left'
             )
+            
+            # Drop the redundant Donors column after merge
+            if 'Donors' in self._merged_df.columns:
+                self._merged_df = self._merged_df.drop(columns=['Donors'])
         
         print(f"Created merged dataframe with {len(self._merged_df)} records")
     

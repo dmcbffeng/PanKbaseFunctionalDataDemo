@@ -55,11 +55,17 @@ class FilterService:
             filter_values = getattr(filter_request, filter_field, None)
             
             if filter_values and df_column in df.columns:
-                # Case-insensitive matching
-                df_values_lower = df[df_column].str.lower()
-                filter_values_lower = [v.lower() for v in filter_values]
-                df = df[df_values_lower.isin(filter_values_lower) | df[df_column].isna() == False]
-                df = df[df[df_column].str.lower().isin(filter_values_lower)]
+                # Convert filter values to lowercase for case-insensitive matching
+                filter_values_lower = [str(v).lower().strip() for v in filter_values]
+                
+                # Create a mask for matching values (handle NaN safely)
+                def match_value(val):
+                    if pd.isna(val):
+                        return False
+                    return str(val).lower().strip() in filter_values_lower
+                
+                mask = df[df_column].apply(match_value)
+                df = df[mask]
         
         return df
     
