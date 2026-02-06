@@ -1,5 +1,5 @@
 """
-Streamlit test application for PanKbase Functional Data API
+Streamlit test application for Demo Functional Data API
 
 Run with: streamlit run test_app.py
 
@@ -18,12 +18,12 @@ import json
 API_URL = "http://localhost:8000"
 
 st.set_page_config(
-    page_title="PanKbase Functional Data Portal",
+    page_title="Demo Functional Data Portal",
     page_icon="🧬",
     layout="wide"
 )
 
-st.title("🧬 PanKbase Functional Data Portal")
+st.title("🧬 Demo Functional Data Portal")
 st.markdown("Test interface for the functional perifusion data API")
 
 
